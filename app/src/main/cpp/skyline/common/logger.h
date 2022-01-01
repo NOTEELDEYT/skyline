@@ -59,111 +59,153 @@ namespace skyline {
 
         static void Write(LogLevel level, const std::string &str);
 
-        /**
-         * @brief A wrapper around a string which captures the calling function using Clang source location builtins
-         * @note A function needs to be declared for every argument template specialization as CTAD cannot work with implicit casting
-         * @url https://clang.llvm.org/docs/LanguageExtensions.html#source-location-builtins
-         */
         template<typename... Args>
-        struct FunctionString {
-            fmt::format_string<Args...> string;
-            const char *function;
+        static void Log(LogLevel level, const char *function, util::FormatString<Args...> formatString, Args... args) {
+            UpdateTag();
+            if (level <= configLevel)
+                Write(level, std::string(function) + ": " + util::Format(formatString, std::forward<Args>(args)...));
+        }
 
-            constexpr FunctionString(fmt::format_string<Args...> string, const char *function = __builtin_FUNCTION()) : string(std::move(string)), function(function) {}
+        template<typename... Args>
+        static void LogNoPrefix(LogLevel level, util::FormatString<Args...> formatString, Args... args) {
+            UpdateTag();
+            if (level <= configLevel)
+                Write(level, util::Format(formatString, std::forward<Args>(args)...));
+        }
 
-            constexpr fmt::format_string<Args...> operator*() {
-                return util::Format("{}: {}", function, string);
-            }
-        };
+        #define LOG(level, formatString, ...)                                                                       \
+        do {                                                                                                        \
+            skyline::Logger::Log(level, __func__, formatString, ##__VA_ARGS__);                                     \
+        } while (false)
+
+        #define LOG_NOPREFIX(level, formatString, ...)                                                              \
+        do {                                                                                                        \
+            skyline::Logger::LogNoPrefix(level, formatString, ##__VA_ARGS__);                                       \
+        } while (false)
+
+        #define LOG_ERROR(formatString, ...)                                                                        \
+        do {                                                                                                        \
+            LOG(LogLevel::Error, formatString, __VA_ARGS__);                                                        \
+        } while (false)
+
+        #define LOG_ERROR_NOPREFIX(formatString, ...)                                                               \
+        do {                                                                                                        \
+            LOG_NOPREFIX(LogLevel::Error, formatString, __VA_ARGS__);                                               \
+        } while (false)
+
+        #define LOG_WARN(formatString, ...)                                                                         \
+        do {                                                                                                        \
+            LOG(LogLevel::Warn, formatString, __VA_ARGS__);                                                         \
+        } while (false)
+
+        #define LOG_WARN_NOPREFIX(formatString, ...)                                                                \
+        do {                                                                                                        \
+            LOG_NOPREFIX(LogLevel::Warn, formatString, __VA_ARGS__);                                                \
+        } while (false)
+
+        #define LOG_INFO(formatString, ...)                                                                         \
+        do {                                                                                                        \
+            LOG(LogLevel::Info, formatString, __VA_ARGS__);                                                         \
+        } while (false)
+
+        #define LOG_INFO_NOPREFIX(formatString, ...)                                                                \
+        do {                                                                                                        \
+            LOG_NOPREFIX(LogLevel::Info, formatString, __VA_ARGS__);                                                \
+        } while (false)
+
+        #define LOG_DEBUG(formatString, ...)                                                                        \
+        do {                                                                                                        \
+            LOG(LogLevel::Debug, formatString, __VA_ARGS__);                                                        \
+        } while (false)
+
+        #define LOG_DEBUG_NOPREFIX(formatString, ...)                                                               \
+        do {                                                                                                        \
+            LOG_NOPREFIX(LogLevel::Debug, formatString, __VA_ARGS__);                                               \
+        } while (false)
+
+        #define LOG_VERBOSE(formatString, ...)                                                                      \
+        do {                                                                                                        \
+            LOG(LogLevel::Verbose, formatString, __VA_ARGS__);                                                      \
+        } while (false)
+
+        #define LOG_VERBOSE_NOPREFIX(formatString, ...)                                                             \
+        do {                                                                                                        \
+            LOG_NOPREFIX(LogLevel::Verbose, formatString, __VA_ARGS__);                                             \
+        } while (false)
 
         template<typename... Args>
         static void Error(util::FormatString<Args...> formatString, Args... args) {
-            if (LogLevel::Error <= configLevel)
-                Write(LogLevel::Error, util::Format(formatString, std::forward<Args>(args)...));
+            LOG_NOPREFIX(LogLevel::Error, formatString, std::forward<Args>(args)...);
         }
 
         template<typename S>
         static void Error(const S &string) {
-            if (LogLevel::Error <= configLevel)
-                Write(LogLevel::Error, string);
+            LOG_NOPREFIX(LogLevel::Error, "{}", string);
         }
 
         template<typename... Args>
         static void ErrorNoPrefix(util::FormatString<Args...> formatString, Args... args) {
-            if (LogLevel::Error <= configLevel)
-                Write(LogLevel::Error, util::Format(formatString, std::forward<Args>(args)...));
+            LOG_NOPREFIX(LogLevel::Error, formatString, std::forward<Args>(args)...);
         }
 
         template<typename... Args>
         static void Warn(util::FormatString<Args...> formatString, Args... args) {
-            if (LogLevel::Warn <= configLevel)
-                Write(LogLevel::Warn, util::Format(formatString, std::forward<Args>(args)...));
+            LOG_NOPREFIX(LogLevel::Warn, formatString, std::forward<Args>(args)...);
         }
 
         template<typename S>
         static void Warn(const S &string) {
-            if (LogLevel::Warn <= configLevel)
-                Write(LogLevel::Warn, string);
+            LOG_NOPREFIX(LogLevel::Warn, "{}", string);
         }
 
         template<typename... Args>
         static void WarnNoPrefix(util::FormatString<Args...> formatString, Args... args) {
-            if (LogLevel::Warn <= configLevel)
-                Write(LogLevel::Warn, util::Format(formatString, std::forward<Args>(args)...));
+            LOG_NOPREFIX(LogLevel::Warn, formatString, std::forward<Args>(args)...);
         }
 
         template<typename... Args>
         static void Info(util::FormatString<Args...> formatString, Args... args) {
-            if (LogLevel::Info <= configLevel)
-                Write(LogLevel::Info, util::Format(formatString, std::forward<Args>(args)...));
+            LOG_NOPREFIX(LogLevel::Info, formatString, std::forward<Args>(args)...);
         }
 
         template<typename S>
         static void Info(const S &string) {
-            if (LogLevel::Info <= configLevel)
-                Write(LogLevel::Info, string);
+            LOG_NOPREFIX(LogLevel::Info, "{}", string);
         }
 
         template<typename... Args>
         static void InfoNoPrefix(util::FormatString<Args...> formatString, Args... args) {
-            if (LogLevel::Info <= configLevel)
-                Write(LogLevel::Info, util::Format(formatString, std::forward<Args>(args)...));
+            LOG_NOPREFIX(LogLevel::Info, formatString, std::forward<Args>(args)...);
         }
 
         template<typename... Args>
         static void Debug(util::FormatString<Args...> formatString, Args... args) {
-            if (LogLevel::Debug <= configLevel)
-                Write(LogLevel::Debug, util::Format(formatString, std::forward<Args>(args)...));
+            LOG_NOPREFIX(LogLevel::Debug, formatString, std::forward<Args>(args)...);
         }
 
         template<typename S>
         static void Debug(const S &string) {
-            if (LogLevel::Debug <= configLevel)
-                Write(LogLevel::Debug, string);
+            LOG_NOPREFIX(LogLevel::Debug, "{}", string);
         }
 
         template<typename... Args>
         static void DebugNoPrefix(util::FormatString<Args...> formatString, Args... args) {
-            if (LogLevel::Debug <= configLevel)
-                Write(LogLevel::Debug, util::Format(formatString, std::forward<Args>(args)...));
+            LOG_NOPREFIX(LogLevel::Debug, formatString, std::forward<Args>(args)...);
         }
 
         template<typename... Args>
         static void Verbose(util::FormatString<Args...> formatString, Args... args) {
-            if (LogLevel::Verbose <= configLevel)
-                Write(LogLevel::Verbose, util::Format(formatString, std::forward<Args>(args)...));
+            LOG_NOPREFIX(LogLevel::Verbose, formatString, std::forward<Args>(args)...);
         }
 
         template<typename S>
         static void Verbose(const S &string) {
-            if (LogLevel::Verbose <= configLevel)
-                Write(LogLevel::Verbose, string);
+            LOG_NOPREFIX(LogLevel::Verbose, "{}", string);
         }
 
         template<typename... Args>
         static void VerboseNoPrefix(util::FormatString<Args...> formatString, Args... args) {
-            if (LogLevel::Verbose <= configLevel)
-                Write(LogLevel::Verbose, util::Format(formatString, std::forward<Args>(args)...));
+            LOG_NOPREFIX(LogLevel::Verbose, formatString, std::forward<Args>(args)...);
         }
     };
 }

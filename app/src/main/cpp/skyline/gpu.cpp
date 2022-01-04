@@ -110,7 +110,7 @@ namespace skyline::gpu {
             #undef IGNORE_TYPE
         }
 
-        Logger::Write(severityLookup.at(static_cast<size_t>(std::countr_zero(static_cast<u32>(flags)))), util::Format("Vk{}:{}[0x{:X}]:I{}:L{}: {}", layerPrefix, vk::to_string(vk::DebugReportObjectTypeEXT(objectType)), object, messageCode, location, message));
+        LOG(severityLookup.at(static_cast<size_t>(std::countr_zero(static_cast<u32>(flags)))), "Vk{}:{}[0x{:X}]:I{}:L{}: {}", layerPrefix, vk::to_string(vk::DebugReportObjectTypeEXT(objectType)).c_str(), object, messageCode, location, message);
 
         return VK_FALSE;
     }

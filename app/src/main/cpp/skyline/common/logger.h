@@ -5,7 +5,9 @@
 
 #include <fstream>
 #include <mutex>
+#include <thread>
 #include "base.h"
+#include "circular_queue.h"
 
 namespace skyline {
     /**
@@ -23,8 +25,6 @@ namespace skyline {
             Debug,
             Verbose,
         };
-
-        static inline LogLevel configLevel{LogLevel::Verbose}; //!< The minimum level of logs to write
 
         /**
          * @brief Holds logger variables that cannot be static
@@ -46,31 +46,65 @@ namespace skyline {
         };
         static inline LoggerContext EmulationContext, LoaderContext;
 
+        struct LogEntry {
+            LoggerContext *context;
+            LogLevel level;
+            std::string str;
+            std::string threadName;
+        };
+
+        static inline LogLevel configLevel{LogLevel::Verbose}; //!< The minimum level of logs to write
+        static inline CircularQueue<LogEntry> logQueue{1024}; //!< The queue where all log messages are sent
+        static inline std::thread thread; //!< The thread that handles writing log entries from the logger queue
+
+        thread_local static inline std::string threadName;
+        thread_local static inline LoggerContext *context{&EmulationContext}; //!< The logger context of a particular thread
+
+        static void StartLoggerThread();
+
+        static void Run();
+
         /**
          * @brief Update the tag in log messages with a new thread name
          */
         static void UpdateTag();
 
+        /**
+         * @brief Gets the caller thread's LoggerContext
+         */
         static LoggerContext *GetContext();
 
+        /**
+         * @brief Sets the given LoggerContext to the caller thread
+         */
         static void SetContext(LoggerContext *context);
 
-        static void WriteAndroid(LogLevel level, const std::string &str);
+        static void WriteAndroid(const LogEntry &logEntry);
 
-        static void Write(LogLevel level, const std::string &str);
+        static void Write(const LogEntry &logEntry);
 
         template<typename... Args>
         static void Log(LogLevel level, const char *function, util::FormatString<Args...> formatString, Args... args) {
             UpdateTag();
             if (level <= configLevel)
-                Write(level, std::string(function) + ": " + util::Format(formatString, std::forward<Args>(args)...));
+                logQueue.Push({
+                                  .context = context,
+                                  .level = level,
+                                  .str = std::move(std::string(function) + ": " + util::Format(formatString, std::forward<Args>(args)...)),
+                                  .threadName = threadName,
+                              });
         }
 
         template<typename... Args>
         static void LogNoPrefix(LogLevel level, util::FormatString<Args...> formatString, Args... args) {
             UpdateTag();
             if (level <= configLevel)
-                Write(level, util::Format(formatString, std::forward<Args>(args)...));
+                logQueue.Push({
+                                  .context = context,
+                                  .level = level,
+                                  .str = std::move(util::Format(formatString, std::forward<Args>(args)...)),
+                                  .threadName = threadName,
+                              });
         }
 
         #define LOG(level, formatString, ...)                                                                       \

@@ -36,8 +36,15 @@ namespace skyline {
 
             LoggerContext() {}
 
+            /**
+             * @brief Initialises a LoggerContext and opens an output file stream at the given path
+             */
             void Initialize(const std::string &path);
 
+            /**
+             * @brief Closes the output file stream
+             * @note After this has been called, the context must be re-initialised before any other logging operation
+             */
             void Finalize();
 
             void Flush();
@@ -53,13 +60,17 @@ namespace skyline {
             std::string threadName;
         };
 
+        static constexpr size_t LogQueueSize{1024}; //!< Maximum size of the log queue, this value is arbritary
         static inline LogLevel configLevel{LogLevel::Verbose}; //!< The minimum level of logs to write
-        static inline CircularQueue<LogEntry> logQueue{1024}; //!< The queue where all log messages are sent
+        static inline CircularQueue<LogEntry> logQueue{LogQueueSize}; //!< The queue where all log messages are sent
         static inline std::thread thread; //!< The thread that handles writing log entries from the logger queue
 
         thread_local static inline std::string threadName;
-        thread_local static inline LoggerContext *context{&EmulationContext}; //!< The logger context of a particular thread
+        thread_local static inline LoggerContext *context{&EmulationContext}; //!< The logger context attached to the current thread
 
+        /**
+         * @note The logger thread is launched at application startup via a JNI call, and will keep running until the app is closed
+         */
         static void StartLoggerThread();
 
         static void Run();

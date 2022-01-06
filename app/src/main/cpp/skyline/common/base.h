@@ -21,6 +21,9 @@ namespace fmt {
         }
     };
 
+    /**
+     * @brief An {fmt} formatter for enum values, which formats them to their underlying integer value
+     */
     template<class T> requires std::is_enum_v<T>
     struct formatter<T> : formatter<std::underlying_type_t<T>> {
         template<typename FormatContext>

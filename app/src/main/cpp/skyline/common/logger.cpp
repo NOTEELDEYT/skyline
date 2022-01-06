@@ -35,6 +35,8 @@ namespace skyline {
     void Logger::Run() {
         pthread_setname_np(pthread_self(), "Logger");
 
+        // We don't need to setup signal exception handling here because a SIGINT will never be issued to the logger thread to stop, since its lifetime is equivalent to the process
+        // Any other signal crashes are used to log a stack trace, but if the logger thread crashes then we cannot ensure that trying to log the stack trace won't cause recursive crashes
         logQueue.Process([&](const LogEntry &next) {
             Write(next);
         });

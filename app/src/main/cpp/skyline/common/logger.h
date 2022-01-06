@@ -57,7 +57,7 @@ namespace skyline {
             LoggerContext *context;
             LogLevel level;
             std::string str;
-            std::string threadName;
+            size_t threadId;
         };
 
         static constexpr size_t LogQueueSize{1024}; //!< Maximum size of the log queue, this value is arbritary
@@ -65,7 +65,8 @@ namespace skyline {
         static inline CircularQueue<LogEntry> logQueue{LogQueueSize}; //!< The queue where all log messages are sent
         static inline std::thread thread; //!< The thread that handles writing log entries from the logger queue
 
-        thread_local static inline std::string threadName;
+        thread_local static inline std::vector<std::string> threadNamePool{"unk"}; //!< Names of all threads that write logs to avoid copying the thread name on every log
+        thread_local static inline std::optional<size_t> threadId; //!< The index of the current thread's name in the vector
         thread_local static inline LoggerContext *context{&EmulationContext}; //!< The logger context attached to the current thread
 
         /**
@@ -102,7 +103,7 @@ namespace skyline {
                                   .context = context,
                                   .level = level,
                                   .str = std::move(std::string(function) + ": " + util::Format(formatString, std::forward<Args>(args)...)),
-                                  .threadName = threadName,
+                                  .threadId = threadId.value_or(0),
                               });
         }
 
@@ -114,7 +115,7 @@ namespace skyline {
                                   .context = context,
                                   .level = level,
                                   .str = std::move(util::Format(formatString, std::forward<Args>(args)...)),
-                                  .threadName = threadName,
+                                  .threadId = threadId.value_or(0),
                               });
         }
 

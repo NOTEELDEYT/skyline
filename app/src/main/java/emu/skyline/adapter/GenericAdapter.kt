@@ -68,6 +68,11 @@ open class GenericAdapter : RecyclerView.Adapter<GenericViewHolder<ViewBinding>>
         filter.filter(currentSearchTerm)
     }
 
+    open fun removeItemAt(position : Int) {
+        allItems.removeAt(position)
+        filter.filter(currentSearchTerm)
+    }
+
     fun setOnFilterPublishedListener(listener : OnFilterPublishedListener) {
         onFilterPublishedListener = listener
     }

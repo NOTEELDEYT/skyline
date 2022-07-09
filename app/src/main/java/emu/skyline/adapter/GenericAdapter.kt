@@ -21,7 +21,7 @@ typealias OnFilterPublishedListener = () -> Unit
 /**
  * Can handle any view types with [GenericListItem] implemented, [GenericListItem] are differentiated by the return value of [GenericListItem.getViewBindingFactory]
  */
-class GenericAdapter : RecyclerView.Adapter<GenericViewHolder<ViewBinding>>(), Filterable {
+open class GenericAdapter : RecyclerView.Adapter<GenericViewHolder<ViewBinding>>(), Filterable {
     companion object {
         private val DIFFER = object : DiffUtil.ItemCallback<GenericListItem<ViewBinding>>() {
             override fun areItemsTheSame(oldItem : GenericListItem<ViewBinding>, newItem : GenericListItem<ViewBinding>) = oldItem.areItemsTheSame(newItem)
@@ -132,5 +132,24 @@ class GenericAdapter : RecyclerView.Adapter<GenericViewHolder<ViewBinding>>(), F
             asyncListDiffer.submitList(results.values as List<GenericListItem<ViewBinding>>)
             onFilterPublishedListener?.invoke()
         }
+    }
+}
+
+/**
+ * A [GenericAdapter] that supports marking one item as selected. List items that need to access the selected position should inherit from [SelectableGenericListItem]
+ */
+class SelectableGenericAdapter(var defaultPosition : Int) : GenericAdapter() {
+    var selectedPosition : Int = defaultPosition
+        set(position) {
+            val previousSelectedPosition = field
+            field = position
+            notifyItemChanged(previousSelectedPosition)
+            notifyItemChanged(position)
+        }
+
+    override fun removeItemAt(position: Int) {
+        super.removeItemAt(position)
+        if (position == selectedPosition)
+            selectedPosition = defaultPosition
     }
 }

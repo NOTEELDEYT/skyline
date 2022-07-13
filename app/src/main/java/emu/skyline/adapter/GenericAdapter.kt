@@ -73,6 +73,11 @@ open class GenericAdapter : RecyclerView.Adapter<GenericViewHolder<ViewBinding>>
         filter.filter(currentSearchTerm)
     }
 
+    open fun addItemAt(position : Int, item : GenericListItem<out ViewBinding>) {
+        allItems.add(position, item)
+        filter.filter(currentSearchTerm)
+    }
+
     fun setOnFilterPublishedListener(listener : OnFilterPublishedListener) {
         onFilterPublishedListener = listener
     }
@@ -152,7 +157,7 @@ class SelectableGenericAdapter(var defaultPosition : Int) : GenericAdapter() {
             notifyItemChanged(position)
         }
 
-    override fun removeItemAt(position: Int) {
+    override fun removeItemAt(position : Int) {
         super.removeItemAt(position)
         if (position == selectedPosition)
             selectedPosition = defaultPosition
